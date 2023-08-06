@@ -112,7 +112,7 @@ void DMA_ADC_Init(void)
 	hdma_adc1.Init.MemInc = DMA_MINC_ENABLE;
 	hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
 	hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-	hdma_adc1.Init.Mode = DMA_CIRCULAR;
+	hdma_adc1.Init.Mode = DMA_NORMAL;
 	hdma_adc1.Init.Priority = DMA_PRIORITY_HIGH;
 	hdma_adc1.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 	hdma_adc1.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
