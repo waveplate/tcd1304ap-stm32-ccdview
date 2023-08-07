@@ -40,7 +40,6 @@ volatile uint8_t icg_count = 0;
 volatile uint8_t delay_counter = 0;
 volatile uint32_t buffer[NUM_PIXELS];
 
-
 void DMA2_Stream0_IRQHandler(void)
 {
   HAL_DMA_IRQHandler(&hdma_adc1);
@@ -53,8 +52,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	icg_count = 0;
 	stop_timers();
 	write_data();
-	start_timers();
 	memset(buffer, 0, sizeof(buffer[0]) * NUM_PIXELS);
+	start_timers();
   }
 }
 
@@ -78,19 +77,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM5)
     {
-        if (++icg_count == 2)
+        if (++icg_count == 1)
         {
-        	start_delay_timer();
+        	start_data_timer();
         }
-    }
-    else if(htim->Instance == TIM1)
-    {
-		if(++delay_counter > exposure*0.23 + 5)
-		{
-			delay_counter = 0;
-			start_data_timer();
-			stop_delay_timer();
-		}
     }
 }
 

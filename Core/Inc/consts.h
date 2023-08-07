@@ -8,6 +8,6 @@
 #define CPU_freq 84000000
 #define CCD_freq 2000000
 #define NUM_PIXELS 3694
-#define BAUD_RATE 300000
+#define BAUD_RATE 500000
 
 #endif /* INC_CONSTS_H_ */

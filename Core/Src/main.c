@@ -2,14 +2,16 @@
 #include "timers.h"
 #include "main.h"
 
-// exposure time
-volatile uint8_t exposure = 10;
+// exposure time (exposure*~8ms)
+volatile uint8_t exposure = 50;
 
 //fM (TIM3)		PB0	(Ch3)
 //SH (TIM2)		PA1	(Ch2)
 //ICG (TIM5)	PA0	(Ch1)
 //ADC (TIM4)	PB9 (Ch4)
-//DELAY (TIM1)  PA8 (Ch1)
+//USART1 (TX)	PA9
+//USART1 (RX	PA10
+//B1 button		PC13 (start/stop timers)
 
 int main(void)
 {
@@ -21,15 +23,17 @@ int main(void)
 	USART1_Init();
 
 	MX_fM_Init();
+	HAL_TIM_Base_Start(&fM);
+	HAL_TIM_PWM_Start(&fM, TIM_CHANNEL_3);
+
 	MX_SH_Init();
 	MX_ICG_Init();
-	MX_DELAY_Init();
+
+	MX_DATA_Init();
+	HAL_TIM_Base_Start(&DATA);
 
 	ADC_Init();
 	DMA_ADC_Init();
-
-	HAL_TIM_Base_Start(&fM);
-	HAL_TIM_PWM_Start(&fM, TIM_CHANNEL_3);
 
 	start_timers();
 
@@ -51,8 +55,8 @@ void write_data()
 	}
 
 	HAL_UART_Transmit(&huart1, (uint8_t*)data, 2*NUM_PIXELS, HAL_MAX_DELAY);
-	HAL_UART_Transmit(&huart1, (uint8_t*)eof, 1, HAL_MAX_DELAY);
-	HAL_UART_Transmit(&huart1, (uint8_t*)eof, 1, HAL_MAX_DELAY);
+	HAL_UART_Transmit(&huart1, eof, 1, HAL_MAX_DELAY);
+	HAL_UART_Transmit(&huart1, eof, 1, HAL_MAX_DELAY);
 }
 
 void MX_GPIO_Init(void)
@@ -105,13 +109,13 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Alternate = GPIO_AF2_TIM4;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-	// PA8 - TIM1 timer
-	GPIO_InitStruct.Pin = GPIO_PIN_8;
-	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-	GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	// PA8 - DELAY timer
+//	GPIO_InitStruct.Pin = GPIO_PIN_8;
+//	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+//	GPIO_InitStruct.Pull = GPIO_NOPULL;
+//	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+//	GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
+//	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 	// PC0 - ADC input
 	GPIO_InitStruct.Pin = GPIO_PIN_0;

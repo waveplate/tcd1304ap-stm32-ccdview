@@ -4,8 +4,6 @@
 
 void start_timers(void)
 {
-	MX_DATA_Init();
-
 	int SH_CNT = SH.Init.Period - SH_DELAY;
 	int ICG_CNT = ICG.Init.Period - ICG_DELAY;
 
@@ -16,8 +14,6 @@ void start_timers(void)
 	__HAL_TIM_SET_COUNTER(&ICG, ICG_CNT);
 	HAL_TIM_Base_Start_IT(&ICG);
 	HAL_TIM_PWM_Start(&ICG, TIM_CHANNEL_1);
-
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)buffer, NUM_PIXELS);
 }
 
 void stop_timers(void)
@@ -29,29 +25,15 @@ void stop_timers(void)
 	HAL_TIM_Base_Stop(&SH);
 }
 
-
 void start_data_timer(void)
 {
-	HAL_TIM_Base_Start(&DATA);
 	HAL_TIM_PWM_Start(&DATA, TIM_CHANNEL_4);
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)buffer, NUM_PIXELS);
 }
 
 void stop_data_timer(void)
 {
 	HAL_TIM_PWM_Stop(&DATA, TIM_CHANNEL_4);
-	HAL_TIM_Base_Stop(&DATA);
-}
-
-void start_delay_timer(void)
-{
-	HAL_TIM_Base_Start_IT(&DELAY);
-	HAL_TIM_PWM_Start(&DELAY, TIM_CHANNEL_1);
-}
-
-void stop_delay_timer(void)
-{
-	HAL_TIM_PWM_Stop(&DELAY, TIM_CHANNEL_1);
-	HAL_TIM_Base_Stop(&DELAY);
 }
 
 void SystemClock_Config(void)
@@ -152,7 +134,7 @@ void ADC_Init(void)
 
     sConfig.Channel = ADC_CHANNEL_10;
     sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+    sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
 
     if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
     {
@@ -199,7 +181,7 @@ void MX_fM_Init(void)
 	}
 
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = CPU_freq / CCD_freq / 2;
+	sConfigOC.Pulse = (CPU_freq / CCD_freq) / 2;
 	sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
 	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 
@@ -212,13 +194,13 @@ void MX_fM_Init(void)
 void MX_SH_Init(void)
 {
 	TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-	TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+	TIM_MasterConfigTypeDef sMasterConfig = {0};
 	TIM_OC_InitTypeDef sConfigOC = {0};
 
 	SH.Instance = TIM2;
 	SH.Init.Prescaler = CPU_freq / CCD_freq - 1;
 	SH.Init.CounterMode = TIM_COUNTERMODE_UP;
-	SH.Init.Period = exposure*SH_PERIOD - 1;
+	SH.Init.Period = (exposure*SH_PERIOD) - 1;
 	SH.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	SH.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
@@ -239,16 +221,16 @@ void MX_SH_Init(void)
 		Error_Handler();
 	}
 
-	sSlaveConfig.SlaveMode = TIM_SLAVEMODE_TRIGGER;
-	sSlaveConfig.InputTrigger = TIM_TS_ITR2;
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
 
-	if (HAL_TIM_SlaveConfigSynchronization(&SH, &sSlaveConfig) != HAL_OK)
+	if (HAL_TIMEx_MasterConfigSynchronization(&SH, &sMasterConfig) != HAL_OK)
 	{
 		Error_Handler();
 	}
 
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = exposure*CCD_freq / 1000000;
+	sConfigOC.Pulse = (exposure*SH_PERIOD) / 2;
 	sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
 	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 
@@ -258,10 +240,11 @@ void MX_SH_Init(void)
 	}
 }
 
+
 void MX_ICG_Init(void)
 {
 	TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-	TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+	TIM_MasterConfigTypeDef sMasterConfig = {0};
 	TIM_OC_InitTypeDef sConfigOC = {0};
 
 	ICG.Instance = TIM5;
@@ -288,16 +271,16 @@ void MX_ICG_Init(void)
 		Error_Handler();
 	}
 
-	sSlaveConfig.SlaveMode = TIM_SLAVEMODE_TRIGGER;
-	sSlaveConfig.InputTrigger = TIM_TS_ITR2;
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
 
-	if (HAL_TIM_SlaveConfigSynchronization(&ICG, &sSlaveConfig) != HAL_OK)
+	if (HAL_TIMEx_MasterConfigSynchronization(&ICG, &sMasterConfig) != HAL_OK)
 	{
 		Error_Handler();
 	}
 
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = (exposure+2)*SH_PERIOD; // 1
+	sConfigOC.Pulse = (exposure+2)*SH_PERIOD;
 	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
 	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 
@@ -307,16 +290,17 @@ void MX_ICG_Init(void)
 	}
 }
 
+
 void MX_DATA_Init(void)
 {
 	TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-	TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+	TIM_MasterConfigTypeDef sMasterConfig = {0};
 	TIM_OC_InitTypeDef sConfigOC = {0};
 
 	DATA.Instance = TIM4;
 	DATA.Init.Prescaler = 0;
 	DATA.Init.CounterMode = TIM_COUNTERMODE_UP;
-	DATA.Init.Period = 4*CPU_freq / CCD_freq - 1;
+	DATA.Init.Period = (CPU_freq / CCD_freq) * 4 - 1;
 	DATA.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	DATA.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
@@ -337,68 +321,20 @@ void MX_DATA_Init(void)
 		Error_Handler();
 	}
 
-	sSlaveConfig.SlaveMode = TIM_SLAVEMODE_TRIGGER;
-	sSlaveConfig.InputTrigger = TIM_TS_ITR2;
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
 
-	if (HAL_TIM_SlaveConfigSynchronization(&DATA, &sSlaveConfig) != HAL_OK)
+	if (HAL_TIMEx_MasterConfigSynchronization(&DATA, &sMasterConfig) != HAL_OK)
 	{
 		Error_Handler();
 	}
 
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = CPU_freq / CCD_freq / 4;
+	sConfigOC.Pulse = (CPU_freq / CCD_freq) / 4;
 	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
 	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 
 	if (HAL_TIM_PWM_ConfigChannel(&DATA, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
-	{
-		Error_Handler();
-	}
-}
-
-void MX_DELAY_Init(void)
-{
-	TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-	TIM_MasterConfigTypeDef sMasterConfig = {0};
-	TIM_OC_InitTypeDef sConfigOC = {0};
-
-	DELAY.Instance = TIM1;
-	DELAY.Init.Prescaler = 0;
-	DELAY.Init.CounterMode = TIM_COUNTERMODE_UP;
-	DELAY.Init.Period = CPU_freq / CCD_freq;
-	DELAY.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	DELAY.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-
-	if (HAL_TIM_Base_Init(&DELAY) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-
-	if (HAL_TIM_ConfigClockSource(&DELAY, &sClockSourceConfig) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	if (HAL_TIM_PWM_Init(&DELAY) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
-
-	if (HAL_TIMEx_MasterConfigSynchronization(&DELAY, &sMasterConfig) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = CPU_freq / CCD_freq / 2;
-	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-	if (HAL_TIM_PWM_ConfigChannel(&DELAY, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
 	{
 		Error_Handler();
 	}
