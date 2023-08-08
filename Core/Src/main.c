@@ -5,13 +5,13 @@
 // exposure time
 volatile uint8_t exposure = 20;
 
-//fM (TIM3)		PB0	(Ch3)
-//SH (TIM2)		PA1	(Ch2)
-//ICG (TIM5)	PA0	(Ch1)
-//ADC (TIM4)	PB9 (Ch4)
-//USART1 (TX)	PA9
-//USART1 (RX	PA10
-//B1 button		PC13 (start/stop timers)
+//fM (TIM3)     PB0 (Ch3)
+//SH (TIM2)     PA1 (Ch2)
+//ICG (TIM5)    PA0 (Ch1)
+//ADC (TIM4)    PB9 (Ch4)
+//USART1 (TX)   PA9
+//USART1 (RX)   PA10
+//B1 button     PC13 (start/stop timers)
 
 int main(void)
 {
@@ -46,7 +46,7 @@ int main(void)
 void write_data()
 {
 	uint8_t data[2*NUM_PIXELS];
-	char *eof = "\xff";
+	char *eof = "\xff\xff";
 
 	for (int i = 0; i < NUM_PIXELS; i++)
 	{
@@ -55,8 +55,7 @@ void write_data()
 	}
 
 	HAL_UART_Transmit(&huart1, (uint8_t*)data, 2*NUM_PIXELS, HAL_MAX_DELAY);
-	HAL_UART_Transmit(&huart1, eof, 1, HAL_MAX_DELAY);
-	HAL_UART_Transmit(&huart1, eof, 1, HAL_MAX_DELAY);
+	HAL_UART_Transmit(&huart1, eof, 2, HAL_MAX_DELAY);
 }
 
 void MX_GPIO_Init(void)
@@ -109,14 +108,6 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Alternate = GPIO_AF2_TIM4;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-	// PA8 - DELAY timer
-//	GPIO_InitStruct.Pin = GPIO_PIN_8;
-//	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-//	GPIO_InitStruct.Pull = GPIO_NOPULL;
-//	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-//	GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
-//	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
 	// PC0 - ADC input
 	GPIO_InitStruct.Pin = GPIO_PIN_0;
 	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -126,12 +117,6 @@ void MX_GPIO_Init(void)
 	// PC13 - B1 button
 	GPIO_InitStruct.Pin = GPIO_PIN_13;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-	// ADC1-in : PC0
-	GPIO_InitStruct.Pin = GPIO_PIN_0;
-	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -148,7 +133,7 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 
-	// PC2
+	// PC1, PC4, PC5
 	GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_4 | GPIO_PIN_5;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -159,10 +144,6 @@ void MX_GPIO_Init(void)
 	// PA5 (LD2 - led)
 	GPIO_InitStruct.Pin = GPIO_PIN_5;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	// TIM1 interrupt
-	HAL_NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
 
 	// ICG interrupt
 	HAL_NVIC_SetPriority(TIM5_IRQn, 0, 0);
@@ -176,8 +157,6 @@ void MX_GPIO_Init(void)
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
-
-
 
 void Error_Handler(void)
 {
