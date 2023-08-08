@@ -1,5 +1,5 @@
 # tcd1304ap-stm32-ccdview
-![ccdview](https://i.imgur.com/IIt3qZI.gif)
+![ccdview](https://i.imgur.com/LIap1Z3.gif)
 
 this is firmware for the stm32f401re that reads pixel data from the tcd1304ap linear ccd sensor and transmits it in realtime over rs232
 
