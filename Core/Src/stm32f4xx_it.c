@@ -48,11 +48,10 @@ void DMA2_Stream0_IRQHandler(void)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
   if (hadc->Instance == ADC1) {
-    stop_data_timer();
-	icg_count = 0;
-	stop_timers();
+    icg_count = 0;
+	stop_data_timer();
 	write_data();
-	memset(buffer, 0, sizeof(buffer[0]) * NUM_PIXELS);
+	//memset(buffer, 0, sizeof(buffer[0]) * NUM_PIXELS);
 	start_timers();
   }
 }
@@ -77,7 +76,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM5)
     {
-        if (++icg_count == 1)
+        if (++icg_count == 2)
         {
         	start_data_timer();
         }

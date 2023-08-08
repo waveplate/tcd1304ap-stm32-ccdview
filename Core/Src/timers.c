@@ -200,7 +200,7 @@ void MX_SH_Init(void)
 	SH.Instance = TIM2;
 	SH.Init.Prescaler = CPU_freq / CCD_freq - 1;
 	SH.Init.CounterMode = TIM_COUNTERMODE_UP;
-	SH.Init.Period = (exposure*SH_PERIOD) - 1;
+	SH.Init.Period = (exposure*SH_PERIOD) / 2 - 1;
 	SH.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	SH.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
@@ -230,7 +230,7 @@ void MX_SH_Init(void)
 	}
 
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = (exposure*SH_PERIOD) / 2;
+	sConfigOC.Pulse = (exposure*SH_PERIOD) / 4;
 	sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
 	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 
@@ -250,7 +250,7 @@ void MX_ICG_Init(void)
 	ICG.Instance = TIM5;
 	ICG.Init.Prescaler = CPU_freq / CCD_freq - 1;
 	ICG.Init.CounterMode = TIM_COUNTERMODE_UP;
-	ICG.Init.Period = exposure*(3694*SH_PERIOD) + (exposure+2)*SH_PERIOD - 1;
+	ICG.Init.Period = exposure*(1857*SH_PERIOD) + (exposure+2)*SH_PERIOD - 1;
 	ICG.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	ICG.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 

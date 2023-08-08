@@ -2,8 +2,8 @@
 #include "timers.h"
 #include "main.h"
 
-// exposure time (exposure*~8ms)
-volatile uint8_t exposure = 5;
+// exposure time
+volatile uint8_t exposure = 20;
 
 //fM (TIM3)		PB0	(Ch3)
 //SH (TIM2)		PA1	(Ch2)
