@@ -12,7 +12,8 @@ extern TIM_HandleTypeDef DELAY;
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef husart1;
+extern DMA_HandleTypeDef hdma_usart1_tx;
 
 void MX_fM_Init(void);
 void MX_SH_Init(void);
@@ -22,6 +23,7 @@ void MX_DELAY_Init(void);
 
 void ADC_Init(void);
 void DMA_ADC_Init(void);
+void DMA_USART1_TX_Init(void);
 void USART1_Init(void);
 
 void stop_timers(void);

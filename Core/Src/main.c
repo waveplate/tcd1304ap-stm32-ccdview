@@ -2,8 +2,12 @@
 #include "timers.h"
 #include "main.h"
 
-// exposure time
+// exposure time (exposure*3.7ms)
+// min exposure for 2mhz fM = 2 = 7.388ms
 volatile uint8_t exposure = 20;
+
+// tx_busy when USART1 TX in use
+volatile uint8_t tx_busy = 0;
 
 //fM (TIM3)     PB0 (Ch3)
 //SH (TIM2)     PA1 (Ch2)
@@ -34,6 +38,7 @@ int main(void)
 
 	ADC_Init();
 	DMA_ADC_Init();
+	DMA_USART1_TX_Init();
 
 	start_timers();
 
@@ -46,7 +51,6 @@ int main(void)
 void write_data()
 {
 	uint8_t data[2*NUM_PIXELS];
-	char *eof = "\xff\xff";
 
 	for (int i = 0; i < NUM_PIXELS; i++)
 	{
@@ -54,8 +58,11 @@ void write_data()
 	  data[2 * i + 1] = buffer[i] & 0xFF;
 	}
 
-	HAL_UART_Transmit(&huart1, (uint8_t*)data, 2*NUM_PIXELS, HAL_MAX_DELAY);
-	HAL_UART_Transmit(&huart1, eof, 2, HAL_MAX_DELAY);
+	if(tx_busy == 0)
+	{
+		tx_busy = 1;
+		HAL_UART_Transmit_DMA(&husart1, (uint8_t*)data, 2*NUM_PIXELS);
+	}
 }
 
 void MX_GPIO_Init(void)
@@ -108,6 +115,14 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Alternate = GPIO_AF2_TIM4;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+	// PA8 - DELAY timer
+//	GPIO_InitStruct.Pin = GPIO_PIN_8;
+//	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+//	GPIO_InitStruct.Pull = GPIO_NOPULL;
+//	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+//	GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
+//	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
 	// PC0 - ADC input
 	GPIO_InitStruct.Pin = GPIO_PIN_0;
 	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -117,6 +132,12 @@ void MX_GPIO_Init(void)
 	// PC13 - B1 button
 	GPIO_InitStruct.Pin = GPIO_PIN_13;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	// ADC1-in : PC0
+	GPIO_InitStruct.Pin = GPIO_PIN_0;
+	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -133,7 +154,7 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 
-	// PC1, PC4, PC5
+	// PC2
 	GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_4 | GPIO_PIN_5;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -150,13 +171,22 @@ void MX_GPIO_Init(void)
 	HAL_NVIC_EnableIRQ(TIM5_IRQn);
 
 	// DMA buffer full interrupt
-	HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+	HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 1);
 	HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+
+    HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 1);
+    HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
+
+	// DMA USART1 interrupt
+	HAL_NVIC_SetPriority(USART1_IRQn, 0, 1);
+	HAL_NVIC_EnableIRQ(USART1_IRQn);
 
 	// push button interrupt
 	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
+
+
 
 void Error_Handler(void)
 {

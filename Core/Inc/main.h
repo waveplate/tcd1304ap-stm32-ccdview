@@ -68,6 +68,7 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 
 /* USER CODE BEGIN Private defines */
+extern volatile uint8_t tx_busy;
 extern volatile uint8_t exposure;
 extern volatile uint32_t buffer[NUM_PIXELS];
 /* USER CODE END Private defines */

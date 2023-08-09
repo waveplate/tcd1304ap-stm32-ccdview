@@ -7,13 +7,16 @@ void start_timers(void)
 	int SH_CNT = SH.Init.Period - SH_DELAY;
 	int ICG_CNT = ICG.Init.Period - ICG_DELAY;
 
+	SH_CNT = 0;
+	ICG_CNT = 0;
+
 	__HAL_TIM_SET_COUNTER(&SH, SH_CNT);
 	HAL_TIM_Base_Start(&SH);
 	HAL_TIM_PWM_Start(&SH, TIM_CHANNEL_2);
 
 	__HAL_TIM_SET_COUNTER(&ICG, ICG_CNT);
-	HAL_TIM_Base_Start_IT(&ICG);
-	HAL_TIM_PWM_Start(&ICG, TIM_CHANNEL_1);
+	HAL_TIM_Base_Start(&ICG);
+	HAL_TIM_PWM_Start_IT(&ICG, TIM_CHANNEL_1);
 }
 
 void stop_timers(void)
@@ -70,19 +73,43 @@ void SystemClock_Config(void)
 
 void USART1_Init(void)
 {
-	huart1.Instance = USART1;
-	huart1.Init.BaudRate = BAUD_RATE;
-	huart1.Init.WordLength = UART_WORDLENGTH_8B;
-	huart1.Init.StopBits = UART_STOPBITS_1;
-	huart1.Init.Parity = UART_PARITY_NONE;
-	huart1.Init.Mode = UART_MODE_TX_RX;
-	huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+	husart1.Instance = USART1;
+	husart1.Init.BaudRate = BAUD_RATE;
+	husart1.Init.WordLength = UART_WORDLENGTH_8B;
+	husart1.Init.StopBits = UART_STOPBITS_1;
+	husart1.Init.Parity = UART_PARITY_NONE;
+	husart1.Init.Mode = UART_MODE_TX;
+	husart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+	husart1.Init.OverSampling = UART_OVERSAMPLING_16;
 
-	if (HAL_UART_Init(&huart1) != HAL_OK)
+	if (HAL_UART_Init(&husart1) != HAL_OK)
 	{
 	    Error_Handler();
 	}
+}
+
+void DMA_USART1_TX_Init(void)
+{
+    hdma_usart1_tx.Instance = DMA2_Stream7;
+    hdma_usart1_tx.Init.Channel = DMA_CHANNEL_4;
+    hdma_usart1_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    hdma_usart1_tx.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_usart1_tx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_usart1_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_usart1_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma_usart1_tx.Init.Mode = DMA_NORMAL;
+    hdma_usart1_tx.Init.Priority = DMA_PRIORITY_HIGH;
+    hdma_usart1_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    hdma_usart1_tx.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    hdma_usart1_tx.Init.MemBurst = DMA_MBURST_SINGLE;
+    hdma_usart1_tx.Init.PeriphBurst = DMA_PBURST_SINGLE;
+
+    if (HAL_DMA_Init(&hdma_usart1_tx) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    __HAL_LINKDMA(&husart1, hdmatx, hdma_usart1_tx);
 }
 
 void DMA_ADC_Init(void)
@@ -250,7 +277,7 @@ void MX_ICG_Init(void)
 	ICG.Instance = TIM5;
 	ICG.Init.Prescaler = CPU_freq / CCD_freq - 1;
 	ICG.Init.CounterMode = TIM_COUNTERMODE_UP;
-	ICG.Init.Period = exposure*(1857*SH_PERIOD) + (exposure+2)*SH_PERIOD - 1;
+	ICG.Init.Period = exposure*(1857*SH_PERIOD) - 1;
 	ICG.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	ICG.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 

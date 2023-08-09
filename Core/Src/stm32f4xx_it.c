@@ -18,91 +18,12 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include "consts.h"
-#include "timers.h"
-#include "main.h"
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
-TIM_HandleTypeDef fM;
-TIM_HandleTypeDef SH;
-TIM_HandleTypeDef ICG;
-TIM_HandleTypeDef DATA;
-TIM_HandleTypeDef DELAY;
-
-ADC_HandleTypeDef hadc1;
-DMA_HandleTypeDef hdma_adc1;
-UART_HandleTypeDef huart1;
-
-volatile uint8_t state = 1;
-volatile uint8_t icg_count = 0;
-volatile uint8_t delay_counter = 0;
-volatile uint32_t buffer[NUM_PIXELS];
-
-void DMA2_Stream0_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler(&hdma_adc1);
-}
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
-  if (hadc->Instance == ADC1) {
-    icg_count = 0;
-	stop_data_timer();
-	write_data();
-	//memset(buffer, 0, sizeof(buffer[0]) * NUM_PIXELS);
-	start_timers();
-  }
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	if (GPIO_Pin == GPIO_PIN_13)
-	{
-		state = !state;
-		if(state == 1)
-		{
-			start_timers();
-		}
-		else
-		{
-			stop_timers();
-		}
-	}
-}
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim->Instance == TIM5)
-    {
-        if (++icg_count == 2)
-        {
-        	start_data_timer();
-        }
-    }
-}
-
-void TIM1_UP_TIM10_IRQHandler(void)
-{
-    HAL_TIM_IRQHandler(&DELAY);
-}
-
-void TIM5_IRQHandler(void)
-{
-    HAL_TIM_IRQHandler(&ICG);
-}
-
-void ADC_IRQHandler(void)
-{
-	HAL_ADC_IRQHandler(&hadc1);
-}
-
-void EXTI15_10_IRQHandler(void)
-{
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
-}
-
+#include "consts.h"
+#include "timers.h"
+#include "main.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -132,7 +53,97 @@ void EXTI15_10_IRQHandler(void)
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+TIM_HandleTypeDef fM;
+TIM_HandleTypeDef SH;
+TIM_HandleTypeDef ICG;
+TIM_HandleTypeDef DATA;
+TIM_HandleTypeDef DELAY;
 
+ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
+DMA_HandleTypeDef hdma_usart1_tx;
+UART_HandleTypeDef husart1;
+
+volatile uint8_t state = 1;
+volatile uint8_t icg_count = 0;
+volatile uint8_t delay_counter = 0;
+volatile uint32_t buffer[NUM_PIXELS];
+
+void DMA2_Stream0_IRQHandler(void)
+{
+	HAL_DMA_IRQHandler(&hdma_adc1);
+}
+
+void DMA2_Stream7_IRQHandler(void)
+{
+	HAL_DMA_IRQHandler(&hdma_usart1_tx);
+}
+
+void USART1_IRQHandler(void)
+{
+	HAL_UART_IRQHandler(&husart1);
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if(huart->Instance == USART1 && tx_busy == 1)
+    {
+        uint8_t delimiter[] = {0xFF, 0xFF};
+        HAL_UART_Transmit_DMA(&husart1, delimiter, 2);
+    	tx_busy = 0;
+    }
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	if (hadc->Instance == ADC1) {
+		stop_data_timer();
+		write_data();
+		icg_count = 0;
+	}
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if (GPIO_Pin == GPIO_PIN_13)
+	{
+		state = !state;
+		if(state == 1)
+		{
+			start_timers();
+		}
+		else
+		{
+			stop_timers();
+		}
+	}
+}
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM5)
+    {
+        if (tx_busy == 0 && icg_count++ == 0)
+        {
+        	start_data_timer();
+        }
+    }
+}
+
+void TIM5_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&ICG);
+}
+
+void ADC_IRQHandler(void)
+{
+	HAL_ADC_IRQHandler(&hadc1);
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+}
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
