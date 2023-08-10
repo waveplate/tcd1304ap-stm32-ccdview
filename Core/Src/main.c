@@ -12,13 +12,17 @@ volatile uint8_t tx_busy = 0;
 // average multiple exposures before sending
 volatile uint8_t avg = 1;
 
-//fM (TIM3)     PB0 (Ch3)
-//SH (TIM2)     PA1 (Ch2)
-//ICG (TIM5)    PA0 (Ch1)
-//ADC (TIM4)    PB9 (Ch4)
-//USART1 (TX)   PA9
-//USART1 (RX)   PA10
-//B1 button     PC13 (start/stop timers)
+// fM (TIM3-CH3)   PB0 - A3
+// SH (TIM2-CH2)   PA1 - A1
+// ICG (TIM5-CH1)  PA0 - A0
+// OS (ADC1-in)    PC0 - A5
+
+// USART1 (TX)     PA9  - D8
+// USART1 (RX)     PA10 - D2
+
+// B1 button       PC13 (starts/stops timers)
+
+// DATA (TIM4-CH4) PB9 - D14 (only for debug)
 
 int main(void)
 {
