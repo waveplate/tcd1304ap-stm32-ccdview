@@ -4,17 +4,9 @@
 
 void start_timers(void)
 {
-	int SH_CNT = SH.Init.Period - SH_DELAY;
-	int ICG_CNT = ICG.Init.Period - ICG_DELAY;
-
-	SH_CNT = 0;
-	ICG_CNT = 0;
-
-	__HAL_TIM_SET_COUNTER(&SH, SH_CNT);
 	HAL_TIM_Base_Start(&SH);
 	HAL_TIM_PWM_Start(&SH, TIM_CHANNEL_2);
 
-	__HAL_TIM_SET_COUNTER(&ICG, ICG_CNT);
 	HAL_TIM_Base_Start(&ICG);
 	HAL_TIM_PWM_Start_IT(&ICG, TIM_CHANNEL_1);
 }
@@ -357,7 +349,7 @@ void MX_DATA_Init(void)
 	}
 
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = (CPU_freq / CCD_freq) / 4;
+	sConfigOC.Pulse = (CPU_freq / CCD_freq) / 2;
 	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
 	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 

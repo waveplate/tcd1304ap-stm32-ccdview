@@ -32,8 +32,4 @@ void start_timers(void);
 void start_data_timer(void);
 void stop_data_timer(void);
 
-void start_delay_timer(void);
-void stop_delay_timer(void);
-
-
 #endif /* INC_TIMERS_H_ */

@@ -61,7 +61,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 void SystemClock_Config(void);
 void MX_GPIO_Init(void);
-void write_data(void);
+int write_data(UART_HandleTypeDef *husart1, volatile uint32_t *buffer);
 void Error_Handler(void);
 /* USER CODE END EFP */
 
@@ -70,6 +70,8 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 extern volatile uint8_t tx_busy;
 extern volatile uint8_t exposure;
+extern volatile uint8_t avg;
+extern volatile uint32_t final[NUM_PIXELS];
 extern volatile uint32_t buffer[NUM_PIXELS];
 /* USER CODE END Private defines */
 

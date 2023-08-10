@@ -1,8 +1,6 @@
 #ifndef INC_CONSTS_H_
 #define INC_CONSTS_H_
 
-#define SH_DELAY 11
-#define ICG_DELAY 42
 #define SH_PERIOD 4
 
 #define CPU_freq 84000000

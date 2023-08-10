@@ -68,6 +68,7 @@ volatile uint8_t state = 1;
 volatile uint8_t icg_count = 0;
 volatile uint8_t delay_counter = 0;
 volatile uint32_t buffer[NUM_PIXELS];
+volatile uint32_t final[NUM_PIXELS];
 
 void DMA2_Stream0_IRQHandler(void)
 {
@@ -86,6 +87,8 @@ void USART1_IRQHandler(void)
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
+	// after the pixel data has been transmitted, send 0xFFFF
+	// to mark the end of the data
     if(huart->Instance == USART1 && tx_busy == 1)
     {
         uint8_t delimiter[] = {0xFF, 0xFF};
@@ -97,14 +100,46 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	if (hadc->Instance == ADC1) {
+
+		// stop data timer, and therefore ADC conversions
 		stop_data_timer();
-		write_data();
-		icg_count = 0;
+
+		// if not averaging, just send the data if possible
+		if(avg == 1)
+		{
+			write_data(&husart1, buffer);
+		}
+		else
+		{
+			// nothing to average, just copy into memory
+			if(icg_count == 0)
+			{
+				memcpy((void*)final, (const void*)buffer, sizeof(uint32_t) * NUM_PIXELS);
+			}
+			// might as keep averaging if tx isn't ready
+			else if(icg_count < avg-1 || tx_busy == 1)
+			{
+				// average this reading and the last reading
+				for (unsigned int i = 0; i < NUM_PIXELS; i++) {
+					final[i] = (buffer[i] / 2) + (final[i] / 2);
+				}
+			}
+			// averaging is done, try to send data
+			else
+			{
+				write_data(&husart1, final);
+				icg_count = 0;
+				return;
+			}
+
+			icg_count++;
+		}
 	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	// toggle CCD readout on/off
 	if (GPIO_Pin == GPIO_PIN_13)
 	{
 		state = !state;
@@ -119,14 +154,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 }
 
+// the pixel data begins to be read out by fM on the falling edge
+// (rising edge when inverted) of the ICG pulse
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM5)
     {
-        if (tx_busy == 0 && icg_count++ == 0)
-        {
-        	start_data_timer();
-        }
+    	// begin the DATA timer which triggers the ADC to read data
+    	start_data_timer();
     }
 }
 

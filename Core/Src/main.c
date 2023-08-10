@@ -9,6 +9,9 @@ volatile uint8_t exposure = 20;
 // tx_busy when USART1 TX in use
 volatile uint8_t tx_busy = 0;
 
+// average multiple exposures before sending
+volatile uint8_t avg = 1;
+
 //fM (TIM3)     PB0 (Ch3)
 //SH (TIM2)     PA1 (Ch2)
 //ICG (TIM5)    PA0 (Ch1)
@@ -48,21 +51,26 @@ int main(void)
 	}
 }
 
-void write_data()
+int write_data(UART_HandleTypeDef *husart, volatile uint32_t *buf)
 {
+	if(tx_busy == 1) return -1;
+
 	uint8_t data[2*NUM_PIXELS];
 
+	// convert each 12-bit value to two bytes for TX
 	for (int i = 0; i < NUM_PIXELS; i++)
 	{
-	  data[2 * i] = (buffer[i] >> 8) & 0xFF;
-	  data[2 * i + 1] = buffer[i] & 0xFF;
+	  data[2 * i] = (buf[i] >> 8) & 0xFF;
+	  data[2 * i + 1] = buf[i] & 0xFF;
 	}
 
-	if(tx_busy == 0)
-	{
-		tx_busy = 1;
-		HAL_UART_Transmit_DMA(&husart1, (uint8_t*)data, 2*NUM_PIXELS);
-	}
+	// only send if previous TX not in progress
+	if(tx_busy == 1) return -1;
+
+	tx_busy = 1;
+	HAL_UART_Transmit_DMA(husart, (uint8_t*)data, 2*NUM_PIXELS);
+
+	return 2*NUM_PIXELS;
 }
 
 void MX_GPIO_Init(void)
@@ -73,7 +81,6 @@ void MX_GPIO_Init(void)
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 
-	__HAL_RCC_TIM1_CLK_ENABLE();
 	__HAL_RCC_TIM2_CLK_ENABLE();
 	__HAL_RCC_TIM3_CLK_ENABLE();
 	__HAL_RCC_TIM4_CLK_ENABLE();
@@ -107,21 +114,13 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Alternate = GPIO_AF2_TIM5;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-	// PB9 - DATA timer
+	// PB9 - DATA timer (for debug, this can be commented out)
 	GPIO_InitStruct.Pin = GPIO_PIN_9;
 	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
 	GPIO_InitStruct.Alternate = GPIO_AF2_TIM4;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-	// PA8 - DELAY timer
-//	GPIO_InitStruct.Pin = GPIO_PIN_8;
-//	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-//	GPIO_InitStruct.Pull = GPIO_NOPULL;
-//	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-//	GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
-//	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 	// PC0 - ADC input
 	GPIO_InitStruct.Pin = GPIO_PIN_0;
@@ -145,25 +144,8 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Pin = GPIO_PIN_9 | GPIO_PIN_10;
 	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 	GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	// tie PC2, PB1, PA5 to virtual ground
-	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-
-	// PC2
-	GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_4 | GPIO_PIN_5;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-	// PB1
-	GPIO_InitStruct.Pin = GPIO_PIN_1;
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-	// PA5 (LD2 - led)
-	GPIO_InitStruct.Pin = GPIO_PIN_5;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 	// ICG interrupt
@@ -174,6 +156,7 @@ void MX_GPIO_Init(void)
 	HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 1);
 	HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
+	// USART TX complete interrupt
     HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 1);
     HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
 
@@ -186,10 +169,9 @@ void MX_GPIO_Init(void)
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
-
-
 void Error_Handler(void)
 {
+	// dummy function, do something here if you want
 	while(1)
 	{
 	}
