@@ -13,7 +13,7 @@ def setup_serial(port, baudrate):
 
 def read_serial(ser):
     buffer = bytearray()
-    
+
     # start with 4096 to fix the ylim
     numbers = [4096]
 
@@ -30,17 +30,20 @@ def read_serial(ser):
                             numbers.clear()
                             for i in range(0, len(buffer) - 2, 2):
                                 two_bytes = (buffer[i] << 8) + buffer[i + 1]
+                                # prevent the graph from getting blown out by glitches
+                                if two_bytes > 4096:
+                                    two_bytes = 4096
                                 numbers.append(two_bytes)
 
                             # try to reject nonsense values caused by ADC or UART glitches
-                            if int(numbers[0]) < 4097 and len(numbers) > 3600:
+                            if len(numbers) > 3600:
                                 # add 0 to fix the ylim
                                 numbers.append(0)
                                 update_graph(numbers)
 
                             # print to console if we get a weird number of pixels
                             if len(numbers) != 3695:
-                                print("number of pixels read:", len(numbers))
+                                print("unexpected number of pixels read:", len(numbers))
 
                             buffer.clear()
     except KeyboardInterrupt:
