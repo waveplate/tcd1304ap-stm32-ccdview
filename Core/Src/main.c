@@ -6,11 +6,11 @@
 // min exposure for 2mhz fM = 2 = 7.388ms
 volatile uint8_t exposure = 20;
 
-// tx_busy when USART1 TX in use
-volatile uint8_t tx_busy = 0;
-
 // average multiple exposures before sending
 volatile uint8_t avg = 1;
+
+// tx_busy when USART1 TX in use
+volatile uint8_t tx_busy = 0;
 
 // fM (TIM3-CH3)   PB0 - A3
 // SH (TIM2-CH2)   PA1 - A1
