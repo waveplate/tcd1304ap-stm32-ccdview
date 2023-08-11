@@ -53,4 +53,5 @@ setting this value to >1 will average multiple exposures before sending the data
 you can launch the realtime visualisation script like so:
 
 `python3 ccdview.py <DEVICE> <BAUD RATE>`
+
 `python3 ccdview.py /dev/ttyUSB0 500000`
