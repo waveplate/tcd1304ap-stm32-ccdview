@@ -70,8 +70,8 @@ def update_graph(numbers):
     plt.pause(update_interval)
 
 if __name__ == "__main__":
-    port = "/dev/ttyUSB0"
-    baudrate = int(sys.argv[1])
+    port = sys.argv[1]
+    baudrate = int(sys.argv[2])
     update_interval = 0.1
 
     ser = setup_serial(port, baudrate)
