@@ -47,3 +47,10 @@ setting this value to >1 will average multiple exposures before sending the data
 | CCD_freq | 2000000 | the master clock frequency (fM) |
 | NUM_PIXELS | 3694 | number of pixels on the CCD |
 | BAUD_RATE | 500000 | the USART1 baud rate |
+
+#### ccdview.py usage
+
+you can launch the realtime visualisation script like so:
+
+`python3 ccdview.py <DEVICE> <BAUD RATE>`
+`python3 ccdview.py /dev/ttyUSB0 500000`
