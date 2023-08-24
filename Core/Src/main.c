@@ -6,11 +6,11 @@
 // min exposure for 2mhz fM = 2 = 7.388ms
 volatile uint8_t exposure = 20;
 
-// average multiple exposures before sending
-volatile uint8_t avg = 1;
-
 // tx_busy when USART1 TX in use
 volatile uint8_t tx_busy = 0;
+
+// average multiple exposures before sending
+volatile uint8_t avg = 1;
 
 // fM (TIM3-CH3)   PB0 - A3
 // SH (TIM2-CH2)   PA1 - A1
@@ -126,7 +126,7 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Alternate = GPIO_AF2_TIM4;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-	// PC0 - ADC input
+	// PC0 - ADC1-10
 	GPIO_InitStruct.Pin = GPIO_PIN_0;
 	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -135,12 +135,6 @@ void MX_GPIO_Init(void)
 	// PC13 - B1 button
 	GPIO_InitStruct.Pin = GPIO_PIN_13;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-	// ADC1-in : PC0
-	GPIO_InitStruct.Pin = GPIO_PIN_0;
-	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 

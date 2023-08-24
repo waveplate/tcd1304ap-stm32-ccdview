@@ -30,6 +30,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include "consts.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_adc.h"
 
